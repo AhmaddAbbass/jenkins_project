@@ -1,36 +1,31 @@
 pipeline {
   agent any
-  environment { VIRTUAL_ENV = 'venv' }
+  environment {
+    VENV = 'venv'
+    PYTHON_EXE = 'C:\\Users\\Ahmad Abbas\\AppData\\Local\\Programs\\Python\\Python311\\python.exe'
+  }
 
   stages {
     stage('Setup') {
       steps {
         bat """
-        if not exist %WORKSPACE%\\%VIRTUAL_ENV% (
-          python -m venv %VIRTUAL_ENV%
-        )
-        call %VIRTUAL_ENV%\\Scripts\\activate
-        pip install --upgrade pip
-        pip install -r requirements.txt
+        if not exist %VENV% ("%PYTHON_EXE%" -m venv %VENV%)
+        %VENV%\\Scripts\\python -m pip install --upgrade pip
+        %VENV%\\Scripts\\python -m pip install -r requirements.txt
+        %VENV%\\Scripts\\python --version
         """
       }
     }
 
     stage('Lint') {
       steps {
-        bat """
-        call %VIRTUAL_ENV%\\Scripts\\activate
-        flake8 app.py tests
-        """
+        bat """%VENV%\\Scripts\\python -m flake8 app.py tests"""
       }
     }
 
     stage('Test') {
       steps {
-        bat """
-        call %VIRTUAL_ENV%\\Scripts\\activate
-        pytest -q
-        """
+        bat """%VENV%\\Scripts\\python -m pytest -q"""
       }
     }
 
@@ -39,8 +34,7 @@ pipeline {
         bat """
         if not exist deploy mkdir deploy
         copy /Y app.py deploy\\
-        call %VIRTUAL_ENV%\\Scripts\\activate
-        python deploy\\app.py > deploy\\run.txt
+        %VENV%\\Scripts\\python deploy\\app.py > deploy\\run.txt
         """
         archiveArtifacts artifacts: 'deploy/run.txt', fingerprint: true, onlyIfSuccessful: true
         echo "Deploying application... (local copy + run)"
