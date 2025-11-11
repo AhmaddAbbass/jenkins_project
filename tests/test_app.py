@@ -2,12 +2,12 @@
 import unittest
 from app import greet
 
+
 class TestApp(unittest.TestCase):
     def test_greet(self):
-        self.assertEqual(
-            greet("World"),
-            "Hello, World fromAhmad Abbas!"  # ← match your name & spacing above
-        )
+        expected = "Hello, World fromAhmad Abbas!"
+        self.assertEqual(greet("World"), expected)
+
 
 if __name__ == "__main__":
     unittest.main()
