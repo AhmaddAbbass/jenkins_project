@@ -42,18 +42,19 @@ pipeline {
       }
     }
 
-    stage('Security Scan') {
-      steps {
-        bat """
-        %VENV%\\Scripts\\python -m bandit -r . -lll -q -f txt -o bandit.txt
-        set CODE=%ERRORLEVEL%
-        echo %DATE% %TIME% - Bandit exit code: %CODE%> bandit_exit.txt
-        rem Keep the pipeline green regardless of Bandit findings:
-        exit /b 0
-        """
-        archiveArtifacts artifacts: 'bandit.txt, bandit_exit.txt', fingerprint: true, onlyIfSuccessful: true
-      }
-    }
+stage('Security Scan') {
+  steps {
+    bat """
+    %VENV%\\Scripts\\python -m bandit -r . -lll -q -f txt -o bandit.txt 2> bandit_warnings.txt
+    set CODE=%ERRORLEVEL%
+    echo %DATE% %TIME% - Bandit exit code: %CODE%> bandit_exit.txt
+    rem Keep the pipeline green regardless of Bandit's exit code or warnings:
+    exit /b 0
+    """
+    archiveArtifacts artifacts: 'bandit.txt, bandit_exit.txt, bandit_warnings.txt', fingerprint: true, onlyIfSuccessful: true
+  }
+}
+
 
     stage('Deploy') {
       steps {
