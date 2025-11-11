@@ -12,7 +12,6 @@ pipeline {
         if not exist %VENV% ("%PYTHON_EXE%" -m venv %VENV%)
         %VENV%\\Scripts\\python -m pip install --upgrade pip
         %VENV%\\Scripts\\python -m pip install -r requirements.txt
-        %VENV%\\Scripts\\python --version
         """
       }
     }
@@ -29,6 +28,28 @@ pipeline {
       }
     }
 
+    stage('Coverage') {
+      steps {
+        bat """
+        %VENV%\\Scripts\\python -m coverage erase
+        %VENV%\\Scripts\\python -m coverage run -m pytest
+        %VENV%\\Scripts\\python -m coverage report -m
+        %VENV%\\Scripts\\python -m coverage xml
+        %VENV%\\Scripts\\python -m coverage html
+        """
+        archiveArtifacts artifacts: 'coverage.xml, htmlcov/**', fingerprint: true, onlyIfSuccessful: true
+      }
+    }
+
+    stage('Security Scan') {
+      steps {
+        bat """
+        %VENV%\\Scripts\\python -m bandit -r . -lll -q -f txt -o bandit.txt
+        """
+        archiveArtifacts artifacts: 'bandit.txt', fingerprint: true, onlyIfSuccessful: true
+      }
+    }
+
     stage('Deploy') {
       steps {
         bat """
@@ -37,7 +58,6 @@ pipeline {
         %VENV%\\Scripts\\python deploy\\app.py > deploy\\run.txt
         """
         archiveArtifacts artifacts: 'deploy/run.txt', fingerprint: true, onlyIfSuccessful: true
-        echo "Deploying application... (local copy + run)"
       }
     }
   }
