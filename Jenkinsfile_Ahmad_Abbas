@@ -1,8 +1,54 @@
-# app.py
-STUDENT = "Ahmad Abbas" 
+pipeline {
+  agent any
+  environment { VIRTUAL_ENV = 'venv' }
 
-def greet(name):
-    return f"Hello, {name} from {STUDENT}!"
+  stages {
+    stage('Setup') {
+      steps {
+        bat """
+        if not exist %WORKSPACE%\\%VIRTUAL_ENV% (
+          python -m venv %VIRTUAL_ENV%
+        )
+        call %VIRTUAL_ENV%\\Scripts\\activate
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        """
+      }
+    }
 
-if __name__ == "__main__":
-    print(greet("World"))
+    stage('Lint') {
+      steps {
+        bat """
+        call %VIRTUAL_ENV%\\Scripts\\activate
+        flake8 app.py tests
+        """
+      }
+    }
+
+    stage('Test') {
+      steps {
+        bat """
+        call %VIRTUAL_ENV%\\Scripts\\activate
+        pytest -q
+        """
+      }
+    }
+
+    stage('Deploy') {
+      steps {
+        bat """
+        if not exist deploy mkdir deploy
+        copy /Y app.py deploy\\
+        call %VIRTUAL_ENV%\\Scripts\\activate
+        python deploy\\app.py > deploy\\run.txt
+        """
+        archiveArtifacts artifacts: 'deploy/run.txt', fingerprint: true, onlyIfSuccessful: true
+        echo "Deploying application... (local copy + run)"
+      }
+    }
+  }
+
+  post {
+    always { cleanWs() }
+  }
+}

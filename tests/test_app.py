@@ -6,7 +6,7 @@ class TestApp(unittest.TestCase):
     def test_greet(self):
         self.assertEqual(
             greet("World"),
-            "Hello, World from FirstName LastName!"  # ← match your name & spacing above
+            "Hello, World from Ahmad Abbas!"  # ← match your name & spacing above
         )
 
 if __name__ == "__main__":
